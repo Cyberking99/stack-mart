@@ -13,6 +13,8 @@
 (define-constant ERR_NOT_BUYER (err u403))
 (define-constant ERR_NOT_SELLER (err u403))
 (define-constant ERR_TIMEOUT_NOT_REACHED (err u400))
+(define-constant ERR_ALREADY_ATTESTED (err u400))
+(define-constant ERR_NOT_DELIVERED (err u400))
 
 ;; Escrow timeout: 144 blocks (approximately 1 day assuming 10 min blocks)
 ;; Note: Using burn-block-height for timeout calculation
@@ -39,6 +41,40 @@
   , timeout-block: uint
   })
 
+;; Reputation tracking for sellers and buyers
+(define-map reputation
+  { principal: principal }
+  { successful-txs: uint
+  , failed-txs: uint
+  , rating-sum: uint
+  , rating-count: uint
+  })
+
+;; Delivery attestations
+(define-map delivery-attestations
+  { listing-id: uint }
+  { delivery-hash: (buff 32)
+  , attested-at-block: uint
+  , confirmed: bool
+  , rejected: bool
+  , rejection-reason: (optional (string-ascii 200))
+  })
+
+;; Transaction history tracking
+(define-map transaction-history
+  { principal: principal
+  , tx-index: uint }
+  { listing-id: uint
+  , counterparty: principal
+  , amount: uint
+  , completed: bool
+  , timestamp: uint
+  })
+
+(define-map tx-index-counter
+  { principal: principal }
+  uint)
+
 (define-read-only (get-next-id)
   (ok (var-get next-id)))
 
@@ -56,6 +92,26 @@
   (match (map-get? escrows { listing-id: listing-id })
     escrow (ok escrow)
     ERR_ESCROW_NOT_FOUND))
+
+(define-read-only (get-seller-reputation (seller principal))
+  (match (map-get? reputation { principal: seller })
+    rep (ok rep)
+    (ok {
+      successful-txs: u0
+    , failed-txs: u0
+    , rating-sum: u0
+    , rating-count: u0
+    })))
+
+(define-read-only (get-buyer-reputation (buyer principal))
+  (match (map-get? reputation { principal: buyer })
+    rep (ok rep)
+    (ok {
+      successful-txs: u0
+    , failed-txs: u0
+    , rating-sum: u0
+    , rating-count: u0
+    })))
 
 ;; Verify NFT ownership using SIP-009 standard (get-owner function)
 ;; Note: NFT verification temporarily simplified - will be enhanced with proper trait support
@@ -167,8 +223,8 @@
             (ok true))))
     ERR_NOT_FOUND))
 
-;; Seller confirms delivery
-(define-public (confirm-delivery (listing-id uint))
+;; Seller attests delivery with delivery hash
+(define-public (attest-delivery (listing-id uint) (delivery-hash (buff 32)))
   (match (map-get? escrows { listing-id: listing-id })
     escrow
       (match (map-get? listings { id: listing-id })
@@ -176,6 +232,8 @@
           (begin
             (asserts! (is-eq tx-sender (get seller listing)) ERR_NOT_SELLER)
             (asserts! (is-eq (get state escrow) "pending") ERR_INVALID_STATE)
+            ;; Check attestation doesn't already exist
+            (asserts! (is-none (map-get? delivery-attestations { listing-id: listing-id })) ERR_ALREADY_ATTESTED)
             ;; Transfer NFT if present
             (let ((nft-contract-opt (get nft-contract listing))
                   (token-id-opt (get token-id listing))
@@ -190,6 +248,14 @@
                         true
                       true)
                   true)
+                ;; Create delivery attestation
+                (map-set delivery-attestations
+                  { listing-id: listing-id }
+                  { delivery-hash: delivery-hash
+                  , attested-at-block: u0
+                  , confirmed: false
+                  , rejected: false
+                  , rejection-reason: none })
                 ;; Update escrow state to delivered
                 (map-set escrows
                   { listing-id: listing-id }
@@ -201,6 +267,14 @@
                 (ok true))))
         ERR_NOT_FOUND)
     ERR_ESCROW_NOT_FOUND))
+
+;; Seller confirms delivery (legacy function - kept for backward compatibility)
+;; Note: New code should use attest-delivery with actual delivery hash
+(define-public (confirm-delivery (listing-id uint))
+  ;; For legacy compatibility, use zero buffer (32 bytes)
+  (let ((zero-hash 0x0000000000000000000000000000000000000000000000000000000000000000))
+    (try! (attest-delivery listing-id zero-hash))
+    (ok true)))
 
 ;; Buyer confirms receipt and releases escrow
 (define-public (confirm-receipt (listing-id uint))
@@ -228,6 +302,20 @@
                   (try! (stx-transfer? royalty tx-sender royalty-recipient))
                   true)
                 (try! (stx-transfer? seller-share tx-sender seller))
+                ;; Update delivery attestation if exists
+                (match (map-get? delivery-attestations { listing-id: listing-id })
+                  attestation
+                    (map-set delivery-attestations
+                      { listing-id: listing-id }
+                      { delivery-hash: (get delivery-hash attestation)
+                      , attested-at-block: (get attested-at-block attestation)
+                      , confirmed: true
+                      , rejected: false
+                      , rejection-reason: none })
+                  true)
+                ;; Update reputation - successful transaction
+                (update-reputation seller true)
+                (update-reputation tx-sender true)
                 ;; Update escrow state
                 (map-set escrows
                   { listing-id: listing-id }
@@ -236,8 +324,47 @@
                   , created-at-block: (get created-at-block escrow)
                   , state: "confirmed"
                   , timeout-block: (get timeout-block escrow) })
+                ;; Record transaction history
+                (record-transaction seller listing-id tx-sender price true)
+                (record-transaction tx-sender listing-id seller price true)
                 ;; Remove listing
                 (map-delete listings { id: listing-id })
+                (ok true))))
+        ERR_NOT_FOUND)
+    ERR_ESCROW_NOT_FOUND))
+
+;; Buyer confirms delivery received (alias for confirm-receipt)
+(define-public (confirm-delivery-received (listing-id uint))
+  (confirm-receipt listing-id))
+
+;; Buyer rejects delivery
+(define-public (reject-delivery (listing-id uint) (reason (string-ascii 200)))
+  (match (map-get? escrows { listing-id: listing-id })
+    escrow
+      (match (map-get? listings { id: listing-id })
+        listing
+          (begin
+            (asserts! (is-eq tx-sender (get buyer escrow)) ERR_NOT_BUYER)
+            (asserts! (is-eq (get state escrow) "delivered") ERR_INVALID_STATE)
+            ;; Update delivery attestation
+            (match (map-get? delivery-attestations { listing-id: listing-id })
+              attestation
+                (map-set delivery-attestations
+                  { listing-id: listing-id }
+                  { delivery-hash: (get delivery-hash attestation)
+                  , attested-at-block: (get attested-at-block attestation)
+                  , confirmed: false
+                  , rejected: true
+                  , rejection-reason: (some reason) })
+              true)
+            ;; Update reputation - failed transaction
+            (update-reputation (get seller listing) false)
+            (update-reputation tx-sender false)
+            ;; Record transaction history
+            (let ((price (get amount escrow)))
+              (begin
+                (record-transaction (get seller listing) listing-id tx-sender price false)
+                (record-transaction tx-sender listing-id (get seller listing) price false)
                 (ok true))))
         ERR_NOT_FOUND)
     ERR_ESCROW_NOT_FOUND))
@@ -325,3 +452,48 @@
         ERR_NOT_FOUND)
     ERR_ESCROW_NOT_FOUND))
 
+
+
+;; Helper function to update reputation
+(define-private (update-reputation (principal principal) (success bool))
+  (let ((current-rep (default-to {
+    successful-txs: u0
+  , failed-txs: u0
+  , rating-sum: u0
+  , rating-count: u0
+  } (map-get? reputation { principal: principal }))))
+    (if success
+      (map-set reputation
+        { principal: principal }
+        { successful-txs: (+ (get successful-txs current-rep) u1)
+        , failed-txs: (get failed-txs current-rep)
+        , rating-sum: (get rating-sum current-rep)
+        , rating-count: (get rating-count current-rep) })
+      (map-set reputation
+        { principal: principal }
+        { successful-txs: (get successful-txs current-rep)
+        , failed-txs: (+ (get failed-txs current-rep) u1)
+        , rating-sum: (get rating-sum current-rep)
+        , rating-count: (get rating-count current-rep) }))))
+
+;; Helper function to record transaction history
+(define-private (record-transaction (principal principal) (listing-id uint) (counterparty principal) (amount uint) (completed bool))
+  (let ((current-index (default-to u0 (map-get? tx-index-counter { principal: principal }))))
+    (begin
+      (map-set transaction-history
+        { principal: principal
+        , tx-index: current-index }
+        { listing-id: listing-id
+        , counterparty: counterparty
+        , amount: amount
+        , completed: completed
+        , timestamp: u0 })
+      (map-set tx-index-counter
+        { principal: principal }
+        (+ current-index u1)))))
+
+;; Get transaction history for a principal (returns transaction by index)
+(define-read-only (get-transaction-history (principal principal) (index uint))
+  (match (map-get? transaction-history { principal: principal, tx-index: index })
+    tx (ok tx)
+    ERR_NOT_FOUND))
