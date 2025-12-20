@@ -10,7 +10,7 @@ interface EscrowManagementProps {
 }
 
 export const EscrowManagement = ({ listingId, userRole }: EscrowManagementProps) => {
-  const { userSession, network, isConnected, userData } = useStacks();
+  const { userSession, network, isConnected } = useStacks();
   const { getEscrowStatus } = useContract();
   const [escrowStatus, setEscrowStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +44,13 @@ export const EscrowManagement = ({ listingId, userRole }: EscrowManagementProps)
 
     setIsSubmitting(true);
     try {
+      const userData = userSession.loadUserData();
+      if (!userData || !userData.appPrivateKey) {
+        alert('Wallet not properly connected');
+        setIsSubmitting(false);
+        return;
+      }
+
       const hashBuffer = Buffer.from(deliveryHash, 'hex');
       if (hashBuffer.length !== 32) {
         throw new Error('Hash must be exactly 32 bytes');
@@ -57,7 +64,7 @@ export const EscrowManagement = ({ listingId, userRole }: EscrowManagementProps)
           uintCV(listingId),
           bufferCV(hashBuffer),
         ],
-        senderKey: userSession.loadUserData().appPrivateKey,
+        senderKey: userData.appPrivateKey,
         network,
         anchorMode: AnchorMode.Any,
         postConditionMode: PostConditionMode.Allow,
@@ -85,12 +92,19 @@ export const EscrowManagement = ({ listingId, userRole }: EscrowManagementProps)
   const handleConfirmReceipt = async () => {
     setIsSubmitting(true);
     try {
+      const userData = userSession.loadUserData();
+      if (!userData || !userData.appPrivateKey) {
+        alert('Wallet not properly connected');
+        setIsSubmitting(false);
+        return;
+      }
+
       const txOptions = {
         contractAddress: CONTRACT_ID.split('.')[0],
         contractName: CONTRACT_ID.split('.')[1],
         functionName: 'confirm-receipt',
         functionArgs: [uintCV(listingId)],
-        senderKey: userSession.loadUserData().appPrivateKey,
+        senderKey: userData.appPrivateKey,
         network,
         anchorMode: AnchorMode.Any,
         postConditionMode: PostConditionMode.Allow,
@@ -122,6 +136,13 @@ export const EscrowManagement = ({ listingId, userRole }: EscrowManagementProps)
 
     setIsSubmitting(true);
     try {
+      const userData = userSession.loadUserData();
+      if (!userData || !userData.appPrivateKey) {
+        alert('Wallet not properly connected');
+        setIsSubmitting(false);
+        return;
+      }
+
       const txOptions = {
         contractAddress: CONTRACT_ID.split('.')[0],
         contractName: CONTRACT_ID.split('.')[1],
@@ -130,7 +151,7 @@ export const EscrowManagement = ({ listingId, userRole }: EscrowManagementProps)
           uintCV(listingId),
           stringAsciiCV(rejectionReason),
         ],
-        senderKey: userSession.loadUserData().appPrivateKey,
+        senderKey: userData.appPrivateKey,
         network,
         anchorMode: AnchorMode.Any,
         postConditionMode: PostConditionMode.Allow,
@@ -158,12 +179,19 @@ export const EscrowManagement = ({ listingId, userRole }: EscrowManagementProps)
   const handleReleaseEscrow = async () => {
     setIsSubmitting(true);
     try {
+      const userData = userSession.loadUserData();
+      if (!userData || !userData.appPrivateKey) {
+        alert('Wallet not properly connected');
+        setIsSubmitting(false);
+        return;
+      }
+
       const txOptions = {
         contractAddress: CONTRACT_ID.split('.')[0],
         contractName: CONTRACT_ID.split('.')[1],
         functionName: 'release-escrow',
         functionArgs: [uintCV(listingId)],
-        senderKey: userSession.loadUserData().appPrivateKey,
+        senderKey: userData.appPrivateKey,
         network,
         anchorMode: AnchorMode.Any,
         postConditionMode: PostConditionMode.Allow,

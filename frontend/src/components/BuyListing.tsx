@@ -23,6 +23,13 @@ export const BuyListing = ({ listingId, price, onSuccess, onError }: BuyListingP
 
     setIsSubmitting(true);
     try {
+      const userData = userSession.loadUserData();
+      if (!userData || !userData.appPrivateKey) {
+        onError?.('Wallet not properly connected');
+        setIsSubmitting(false);
+        return;
+      }
+
       const functionName = useEscrow ? 'buy-listing-escrow' : 'buy-listing';
       
       const txOptions = {
@@ -30,7 +37,7 @@ export const BuyListing = ({ listingId, price, onSuccess, onError }: BuyListingP
         contractName: CONTRACT_ID.split('.')[1],
         functionName,
         functionArgs: [uintCV(listingId)],
-        senderKey: userSession.loadUserData().appPrivateKey,
+        senderKey: userData.appPrivateKey,
         network,
         anchorMode: AnchorMode.Any,
         postConditionMode: PostConditionMode.Allow,

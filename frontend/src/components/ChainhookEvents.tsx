@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useChainhooks } from '../hooks/useChainhooks';
 
 export const ChainhookEvents = () => {

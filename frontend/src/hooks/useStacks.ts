@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
-import { StacksMainnet, StacksTestnet } from '@stacks/network';
+import { STACKS_MAINNET, STACKS_TESTNET } from '@stacks/network';
 import { NETWORK } from '../config/contract';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
 const userSession = new UserSession({ appConfig });
 
-const network = NETWORK === 'mainnet' ? new StacksMainnet() : new StacksTestnet();
+const network = NETWORK === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
 
 export const useStacks = () => {
   const [userData, setUserData] = useState(userSession.loadUserData());
@@ -43,7 +43,7 @@ export const useStacks = () => {
 
   const disconnectWallet = () => {
     userSession.signUserOut();
-    setUserData(null);
+    setUserData(undefined as any);
   };
 
   return {

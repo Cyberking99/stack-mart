@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { WalletButton } from './components/WalletButton';
 import { CreateListing } from './components/CreateListing';
 import { ListingCard } from './components/ListingCard';
+import { ListingDetails } from './components/ListingDetails';
 import { ChainhookEvents } from './components/ChainhookEvents';
 import { useStacks } from './hooks/useStacks';
+import { useContract } from './hooks/useContract';
 import './App.css';
 
 function App() {
@@ -115,20 +117,22 @@ function App() {
                 <p>No listings available. Create one above!</p>
               ) : (
                 listings.map((listing) => (
-              <ListingCard 
-                key={listing.id} 
-                listing={listing}
-                onBuy={(id) => {
-                  if (!isConnected) {
-                    alert('Please connect your wallet to buy');
-                    return;
-                  }
-                  setSelectedListingId(id);
-                }}
-                onViewDetails={(id) => setSelectedListingId(id)}
-              />
-            ))}
-          </div>
+                  <ListingCard 
+                    key={listing.id} 
+                    listing={listing}
+                    onBuy={(id) => {
+                      if (!isConnected) {
+                        alert('Please connect your wallet to buy');
+                        return;
+                      }
+                      setSelectedListingId(id);
+                    }}
+                    onViewDetails={(id) => setSelectedListingId(id)}
+                  />
+                ))
+              )}
+            </div>
+          )}
         </section>
 
         <section style={{ marginTop: '40px' }}>

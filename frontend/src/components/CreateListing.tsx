@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStacks } from '../hooks/useStacks';
-import { makeContractCall, broadcastTransaction, AnchorMode, PostConditionMode, uintCV, principalCV, stringAsciiCV } from '@stacks/transactions';
+import { makeContractCall, broadcastTransaction, AnchorMode, PostConditionMode, uintCV, principalCV } from '@stacks/transactions';
 import { CONTRACT_ID } from '../config/contract';
 
 export const CreateListing = () => {
@@ -19,6 +19,13 @@ export const CreateListing = () => {
 
     setIsSubmitting(true);
     try {
+      const userData = userSession.loadUserData();
+      if (!userData || !userData.appPrivateKey) {
+        alert('Wallet not properly connected');
+        setIsSubmitting(false);
+        return;
+      }
+
       const priceMicroSTX = Math.floor(parseFloat(price) * 1000000);
       const royaltyBipsNum = parseInt(royaltyBips);
 
@@ -31,7 +38,7 @@ export const CreateListing = () => {
           uintCV(royaltyBipsNum),
           principalCV(royaltyRecipient),
         ],
-        senderKey: userSession.loadUserData().appPrivateKey,
+        senderKey: userData.appPrivateKey,
         network,
         anchorMode: AnchorMode.Any,
         postConditionMode: PostConditionMode.Allow,

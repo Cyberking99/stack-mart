@@ -62,7 +62,6 @@ export const ListingDetails = ({ listingId, onClose }: ListingDetailsProps) => {
   const tokenId = listingData['token-id']?.value || listingData['token-id'];
 
   const isSeller = isConnected && userData?.profile?.stxAddress?.mainnet === seller;
-  const userAddress = userData?.profile?.stxAddress?.mainnet || '';
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
