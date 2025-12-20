@@ -148,35 +148,28 @@
     listing (ok listing)
     ERR_NOT_FOUND))
 
+;; get-listing-with-nft is an alias for get-listing (both return same data)
 (define-read-only (get-listing-with-nft (id uint))
-  (match (map-get? listings { id: id })
-    listing (ok listing)
-    ERR_NOT_FOUND))
+  (get-listing id))
 
 (define-read-only (get-escrow-status (listing-id uint))
   (match (map-get? escrows { listing-id: listing-id })
     escrow (ok escrow)
     ERR_ESCROW_NOT_FOUND))
 
+;; Shared default reputation structure
+(define-constant DEFAULT_REPUTATION {
+  successful-txs: u0
+, failed-txs: u0
+, rating-sum: u0
+, rating-count: u0
+})
+
 (define-read-only (get-seller-reputation (seller principal))
-  (match (map-get? reputation { principal: seller })
-    rep (ok rep)
-    (ok {
-      successful-txs: u0
-    , failed-txs: u0
-    , rating-sum: u0
-    , rating-count: u0
-    })))
+  (ok (default-to DEFAULT_REPUTATION (map-get? reputation { principal: seller }))))
 
 (define-read-only (get-buyer-reputation (buyer principal))
-  (match (map-get? reputation { principal: buyer })
-    rep (ok rep)
-    (ok {
-      successful-txs: u0
-    , failed-txs: u0
-    , rating-sum: u0
-    , rating-count: u0
-    })))
+  (ok (default-to DEFAULT_REPUTATION (map-get? reputation { principal: buyer }))))
 
 ;; Verify NFT ownership using SIP-009 standard (get-owner function)
 ;; Note: NFT verification temporarily simplified - will be enhanced with proper trait support
@@ -519,14 +512,11 @@
 
 
 
-;; Helper function to update reputation
+
+
+;; Helper function to update reputation (optimized)
 (define-private (update-reputation (principal principal) (success bool))
-  (let ((current-rep (default-to {
-    successful-txs: u0
-  , failed-txs: u0
-  , rating-sum: u0
-  , rating-count: u0
-  } (map-get? reputation { principal: principal }))))
+  (let ((current-rep (default-to DEFAULT_REPUTATION (map-get? reputation { principal: principal }))))
     (if success
       (map-set reputation
         { principal: principal }
@@ -631,8 +621,9 @@
               , staker: tx-sender }
               { amount: (+ (get amount current-stake) amount)
               , side: side })
-            ;; Update dispute stakes totals
-            (if side
+            ;; Update dispute stakes totals (optimized)
+            (let ((buyer-stakes-new (if side (+ (get buyer-stakes dispute) amount) (get buyer-stakes dispute)))
+                  (seller-stakes-new (if side (get seller-stakes dispute) (+ (get seller-stakes dispute) amount))))
               (map-set disputes
                 { id: dispute-id }
                 { escrow-id: (get escrow-id dispute)
@@ -640,18 +631,8 @@
                 , reason: (get reason dispute)
                 , created-at-block: (get created-at-block dispute)
                 , resolved: (get resolved dispute)
-                , buyer-stakes: (+ (get buyer-stakes dispute) amount)
-                , seller-stakes: (get seller-stakes dispute)
-                , resolution: (get resolution dispute) })
-              (map-set disputes
-                { id: dispute-id }
-                { escrow-id: (get escrow-id dispute)
-                , created-by: (get created-by dispute)
-                , reason: (get reason dispute)
-                , created-at-block: (get created-at-block dispute)
-                , resolved: (get resolved dispute)
-                , buyer-stakes: (get buyer-stakes dispute)
-                , seller-stakes: (+ (get seller-stakes dispute) amount)
+                , buyer-stakes: buyer-stakes-new
+                , seller-stakes: seller-stakes-new
                 , resolution: (get resolution dispute) }))
             (ok true))))
     ERR_DISPUTE_NOT_FOUND))
@@ -700,6 +681,7 @@
                 (if (> buyer-stakes seller-stakes)
                   ;; Buyer wins - release to buyer
                   (begin
+                    ;; Mark dispute as resolved
                     (map-set disputes
                       { id: dispute-id }
                       { escrow-id: escrow-id
@@ -731,6 +713,7 @@
                     true)
                   ;; Seller wins - release to seller
                   (begin
+                    ;; Mark dispute as resolved
                     (map-set disputes
                       { id: dispute-id }
                       { escrow-id: escrow-id
@@ -769,8 +752,8 @@
                                 (ok true)))
                           ERR_NOT_FOUND)
                       ERR_ESCROW_NOT_FOUND))
-                    true))))
-                (ok true))))
+                    true)))
+                (ok true)))))
     ERR_DISPUTE_NOT_FOUND))
 
 (define-read-only (get-bundle (bundle-id uint))
