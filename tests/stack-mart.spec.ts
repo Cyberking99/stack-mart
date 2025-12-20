@@ -9,6 +9,12 @@ const seller = accounts.get("wallet_1")!;
 const buyer = accounts.get("wallet_2")!;
 const royaltyRecipient = accounts.get("wallet_3")!;
 
+const getStxBalance = (addr: string): bigint => {
+  const assets = simnet.getAssetsMap();
+  const stx = assets.get("STX");
+  return stx?.get(addr) ?? 0n;
+};
+
 describe("stack-mart listings", () => {
   it("creates a listing with royalty cap", () => {
     const res = simnet.callPublicFn(
@@ -33,6 +39,9 @@ describe("stack-mart listings", () => {
         "royalty-bips": Cl.uint(500),
         "royalty-recipient": Cl.principal(royaltyRecipient),
         seller: Cl.principal(seller),
+        "nft-contract": Cl.none(),
+        "token-id": Cl.none(),
+        "license-terms": Cl.none(),
       })
     );
   });
@@ -62,6 +71,32 @@ describe("stack-mart listings", () => {
     );
 
     expect(missing.result).toBeErr(Cl.uint(404));
+  });
+
+  it("pays seller and royalty recipient on purchase", () => {
+    simnet.callPublicFn(
+      contractName,
+      "create-listing",
+      [Cl.uint(2_000), Cl.uint(1_000), Cl.principal(royaltyRecipient)],
+      seller
+    );
+
+    const sellerBefore = getStxBalance(seller);
+    const buyerBefore = getStxBalance(buyer);
+    const royaltyBefore = getStxBalance(royaltyRecipient);
+
+    const purchase = simnet.callPublicFn(
+      contractName,
+      "buy-listing",
+      [Cl.uint(1)],
+      buyer
+    );
+
+    expect(purchase.result).toBeOk(Cl.bool(true));
+
+    expect(getStxBalance(buyer)).toBe(buyerBefore - 2_000n);
+    expect(getStxBalance(seller)).toBe(sellerBefore + 1_800n);
+    expect(getStxBalance(royaltyRecipient)).toBe(royaltyBefore + 200n);
   });
 });
 
