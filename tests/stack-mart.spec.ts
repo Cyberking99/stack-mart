@@ -283,4 +283,73 @@ describe("stack-mart escrow flow", () => {
     // Note: This would require a read-only function to check delivery status
     // For now, we just verify the function succeeded
   });
+
+  it("updates reputation after successful transaction", () => {
+    // Create listing
+    simnet.callPublicFn(
+      contractName,
+      "create-listing",
+      [Cl.uint(2_000), Cl.uint(200), Cl.principal(royaltyRecipient)],
+      seller
+    );
+
+    // Buy with escrow
+    simnet.callPublicFn(
+      contractName,
+      "buy-listing-escrow",
+      [Cl.uint(1)],
+      buyer
+    );
+
+    // Seller attests delivery
+    const deliveryHash = Cl.bufferFromHex("0000000000000000000000000000000000000000000000000000000000000004");
+    simnet.callPublicFn(
+      contractName,
+      "attest-delivery",
+      [Cl.uint(1), deliveryHash],
+      seller
+    );
+
+    // Buyer confirms receipt
+    simnet.callPublicFn(
+      contractName,
+      "confirm-receipt",
+      [Cl.uint(1)],
+      buyer
+    );
+
+    // Check seller reputation
+    const sellerRep = simnet.callReadOnlyFn(
+      contractName,
+      "get-seller-reputation",
+      [Cl.principal(seller)],
+      deployer
+    );
+
+    expect(sellerRep.result).toBeOk(
+      Cl.tuple({
+        "successful-txs": Cl.uint(1),
+        "failed-txs": Cl.uint(0),
+        "rating-sum": Cl.uint(0),
+        "rating-count": Cl.uint(0),
+      })
+    );
+
+    // Check buyer reputation
+    const buyerRep = simnet.callReadOnlyFn(
+      contractName,
+      "get-buyer-reputation",
+      [Cl.principal(buyer)],
+      deployer
+    );
+
+    expect(buyerRep.result).toBeOk(
+      Cl.tuple({
+        "successful-txs": Cl.uint(1),
+        "failed-txs": Cl.uint(0),
+        "rating-sum": Cl.uint(0),
+        "rating-count": Cl.uint(0),
+      })
+    );
+  });
 });
