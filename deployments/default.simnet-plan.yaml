@@ -66,6 +66,6 @@ plan:
         - emulated-contract-publish:
             contract-name: stack-mart
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: ontracts/stack-mart.clar
+            path: contracts/stack-mart.clar
             clarity-version: 4
       epoch: "3.3"
