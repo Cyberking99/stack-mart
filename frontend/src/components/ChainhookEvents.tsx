@@ -16,9 +16,32 @@ export const ChainhookEvents = () => {
 
   if (error) {
     return (
-      <div style={{ padding: '20px', color: 'red' }}>
-        <p>Error loading chainhook events: {error}</p>
-        <p>Make sure the chainhook server is running at {import.meta.env.VITE_CHAINHOOK_API_URL || 'http://localhost:3001'}</p>
+      <div style={{ 
+        padding: '20px', 
+        backgroundColor: '#fff3cd',
+        border: '1px solid #ffc107',
+        borderRadius: '8px',
+        margin: '20px',
+        color: '#856404'
+      }}>
+        <h3>⚠️ Chainhook Server Unavailable</h3>
+        <p>Real-time events are not available. The chainhook server may not be running.</p>
+        <p style={{ fontSize: '0.9em', marginTop: '10px' }}>
+          To enable real-time events, start the chainhook server:
+        </p>
+        <code style={{ 
+          display: 'block', 
+          padding: '10px', 
+          backgroundColor: '#f8f9fa', 
+          borderRadius: '4px',
+          marginTop: '10px',
+          fontSize: '0.85em'
+        }}>
+          cd hooks-server && npm start
+        </code>
+        <p style={{ fontSize: '0.85em', marginTop: '10px', color: '#666' }}>
+          Server URL: {import.meta.env.VITE_CHAINHOOK_API_URL || 'http://localhost:3001'}
+        </p>
       </div>
     );
   }
