@@ -186,4 +186,60 @@ describe("stack-mart escrow flow", () => {
       })
     );
   });
+
+  it("buyer confirms receipt and releases escrow", () => {
+    // Create listing
+    simnet.callPublicFn(
+      contractName,
+      "create-listing",
+      [Cl.uint(4_000), Cl.uint(400), Cl.principal(royaltyRecipient)],
+      seller
+    );
+
+    // Buy with escrow
+    simnet.callPublicFn(
+      contractName,
+      "buy-listing-escrow",
+      [Cl.uint(1)],
+      buyer
+    );
+
+    // Seller attests delivery
+    const deliveryHash = Cl.bufferFromHex("0000000000000000000000000000000000000000000000000000000000000002");
+    simnet.callPublicFn(
+      contractName,
+      "attest-delivery",
+      [Cl.uint(1), deliveryHash],
+      seller
+    );
+
+    const sellerBefore = getStxBalance(seller);
+    const buyerBefore = getStxBalance(buyer);
+    const royaltyBefore = getStxBalance(royaltyRecipient);
+
+    // Buyer confirms receipt
+    const confirmResult = simnet.callPublicFn(
+      contractName,
+      "confirm-receipt",
+      [Cl.uint(1)],
+      buyer
+    );
+
+    expect(confirmResult.result).toBeOk(Cl.bool(true));
+
+    // Check payments were made
+    expect(getStxBalance(seller)).toBe(sellerBefore + 3_840n); // 4000 - 160 (royalty)
+    expect(getStxBalance(royaltyRecipient)).toBe(royaltyBefore + 160n); // 4000 * 0.04
+    expect(getStxBalance(buyer)).toBe(buyerBefore); // Already paid in escrow
+
+    // Listing should be deleted
+    const listing = simnet.callReadOnlyFn(
+      contractName,
+      "get-listing",
+      [Cl.uint(1)],
+      deployer
+    );
+
+    expect(listing.result).toBeErr(Cl.uint(404));
+  });
 });
