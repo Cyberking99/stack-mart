@@ -4,6 +4,7 @@ import { CreateListing } from './components/CreateListing';
 import { ListingCard } from './components/ListingCard';
 import { ListingDetails } from './components/ListingDetails';
 import { ChainhookEvents } from './components/ChainhookEvents';
+import { LoadingSkeleton } from './components/LoadingSkeleton';
 import { useStacks } from './hooks/useStacks';
 import { useContract } from './hooks/useContract';
 import './App.css';
@@ -75,13 +76,7 @@ function App() {
   if (selectedListingId) {
     return (
       <div className="App">
-        <header style={{ 
-          padding: '20px', 
-          borderBottom: '1px solid #ddd',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
+        <header>
           <h1>StackMart Marketplace</h1>
           <WalletButton />
         </header>
@@ -94,81 +89,86 @@ function App() {
   }
 
   return (
-    <div className="App" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-      <header style={{ 
-        padding: '20px', 
-        borderBottom: '1px solid #ddd',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: 'white',
-      }}>
-        <h1 style={{ margin: 0, color: '#333' }}>StackMart Marketplace</h1>
+    <div className="App">
+      <header>
+        <h1>StackMart Marketplace</h1>
         <WalletButton />
       </header>
 
-      <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <main>
         {error && (
-          <div style={{ 
-            padding: '15px', 
-            backgroundColor: '#f8d7da', 
-            color: '#721c24', 
-            borderRadius: '4px', 
-            marginBottom: '20px' 
-          }}>
+          <div className="alert alert-error">
             <strong>Error:</strong> {error}
           </div>
         )}
-        <section style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px', marginBottom: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ marginTop: 0 }}>Create Listing</h2>
+        
+        <section>
+          <h2>📝 Create Listing</h2>
           <CreateListing />
         </section>
 
-        <section style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px', marginBottom: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ marginTop: 0 }}>Available Listings</h2>
+        <section>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h2 style={{ marginBottom: 0 }}>🛍️ Available Listings</h2>
             <button
+              className="btn btn-secondary"
               onClick={loadListings}
               disabled={isLoadingListings}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: isLoadingListings ? 'not-allowed' : 'pointer',
-              }}
             >
-              {isLoadingListings ? 'Loading...' : 'Refresh'}
+              {isLoadingListings ? (
+                <>
+                  <span className="loading"></span>
+                  Loading...
+                </>
+              ) : (
+                '🔄 Refresh'
+              )}
             </button>
           </div>
+          
           {isLoadingListings ? (
-            <p>Loading listings...</p>
+            <div className="grid grid-cols-1" style={{ 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '1.5rem'
+            }}>
+              <LoadingSkeleton count={6} />
+            </div>
+          ) : listings.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '3rem', 
+              color: 'var(--gray-500)',
+              backgroundColor: 'var(--gray-50)',
+              borderRadius: 'var(--radius-lg)'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+              <h3 style={{ marginBottom: '0.5rem', color: 'var(--gray-700)' }}>No listings available</h3>
+              <p>Be the first to create a listing!</p>
+            </div>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-              {listings.length === 0 ? (
-                <p>No listings available. Create one above!</p>
-              ) : (
-                listings.map((listing) => (
-                  <ListingCard 
-                    key={listing.id} 
-                    listing={listing}
-                    onBuy={(id) => {
-                      if (!isConnected) {
-                        alert('Please connect your wallet to buy');
-                        return;
-                      }
-                      setSelectedListingId(id);
-                    }}
-                    onViewDetails={(id) => setSelectedListingId(id)}
-                  />
-                ))
-              )}
+            <div className="grid grid-cols-1" style={{ 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '1.5rem'
+            }}>
+              {listings.map((listing) => (
+                <ListingCard 
+                  key={listing.id} 
+                  listing={listing}
+                  onBuy={(id) => {
+                    if (!isConnected) {
+                      alert('Please connect your wallet to buy');
+                      return;
+                    }
+                    setSelectedListingId(id);
+                  }}
+                  onViewDetails={(id) => setSelectedListingId(id)}
+                />
+              ))}
             </div>
           )}
         </section>
 
-        <section style={{ backgroundColor: 'white', borderRadius: '8px', padding: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <section>
           <ChainhookEvents />
         </section>
       </main>
