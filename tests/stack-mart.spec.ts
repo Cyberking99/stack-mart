@@ -353,3 +353,59 @@ describe("stack-mart escrow flow", () => {
     );
   });
 });
+
+describe("stack-mart bundles and packs", () => {
+  it("creates a bundle with multiple listings", () => {
+    // Create multiple listings
+    simnet.callPublicFn(
+      contractName,
+      "create-listing",
+      [Cl.uint(1_000), Cl.uint(100), Cl.principal(royaltyRecipient)],
+      seller
+    );
+
+    simnet.callPublicFn(
+      contractName,
+      "create-listing",
+      [Cl.uint(2_000), Cl.uint(200), Cl.principal(royaltyRecipient)],
+      seller
+    );
+
+    simnet.callPublicFn(
+      contractName,
+      "create-listing",
+      [Cl.uint(3_000), Cl.uint(300), Cl.principal(royaltyRecipient)],
+      seller
+    );
+
+    // Create bundle with discount
+    const bundleResult = simnet.callPublicFn(
+      contractName,
+      "create-bundle",
+      [
+        Cl.list([Cl.uint(1), Cl.uint(2), Cl.uint(3)]),
+        Cl.uint(1_000), // 10% discount
+      ],
+      seller
+    );
+
+    expect(bundleResult.result).toBeOk(Cl.uint(1));
+
+    // Get bundle details
+    const bundle = simnet.callReadOnlyFn(
+      contractName,
+      "get-bundle",
+      [Cl.uint(1)],
+      deployer
+    );
+
+    expect(bundle.result).toBeOk(
+      Cl.tuple({
+        "listing-ids": Cl.list([Cl.uint(1), Cl.uint(2), Cl.uint(3)]),
+        "discount-bips": Cl.uint(1_000),
+        creator: Cl.principal(seller),
+        "created-at-block": Cl.uint(0),
+      })
+    );
+  });
+});
