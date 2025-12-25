@@ -3,6 +3,7 @@ import { useStacks } from '../hooks/useStacks';
 import { useContract } from '../hooks/useContract';
 import { makeContractCall, broadcastTransaction, AnchorMode, PostConditionMode, uintCV, principalCV, listCV } from '@stacks/transactions';
 import { CONTRACT_ID } from '../config/contract';
+import { validatePrice, formatSTX } from '../utils/validation';
 
 export const CuratedPack = () => {
   const { userSession, network, isConnected, userData } = useStacks();
@@ -56,8 +57,9 @@ export const CuratedPack = () => {
       return;
     }
 
-    if (!packPrice || parseFloat(packPrice) <= 0) {
-      alert('Please enter a valid pack price');
+    const priceValidation = validatePrice(packPrice);
+    if (!priceValidation.valid) {
+      alert(priceValidation.error || 'Please enter a valid pack price');
       return;
     }
 
