@@ -3,6 +3,7 @@ import { useContract } from '../hooks/useContract';
 import { useStacks } from '../hooks/useStacks';
 import { BuyListing } from './BuyListing';
 import { EscrowManagement } from './EscrowManagement';
+import { formatAddress, formatSTX } from '../utils/validation';
 
 interface ListingDetailsProps {
   listingId: number;
@@ -54,7 +55,7 @@ export const ListingDetails = ({ listingId, onClose }: ListingDetailsProps) => {
 
   const listingData = listing.value || listing;
   const price = listingData.price || 0;
-  const priceInSTX = price / 1000000;
+  const priceInSTX = formatSTX(price);
   const royaltyPercent = (listingData['royalty-bips'] || 0) / 100;
   const seller = listingData.seller || '';
   const licenseTerms = listingData['license-terms']?.value || listingData['license-terms'];
@@ -88,7 +89,7 @@ export const ListingDetails = ({ listingId, onClose }: ListingDetailsProps) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
           <div>
             <p><strong>Seller:</strong></p>
-            <p style={{ fontFamily: 'monospace', fontSize: '0.9em' }}>{seller}</p>
+            <p style={{ fontFamily: 'monospace', fontSize: '0.9em' }}>{formatAddress(seller)}</p>
           </div>
           <div>
             <p><strong>Price:</strong></p>
