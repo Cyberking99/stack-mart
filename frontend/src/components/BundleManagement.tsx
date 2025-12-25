@@ -56,8 +56,9 @@ export const BundleManagement = () => {
       return;
     }
 
-    if (!discountBips || parseInt(discountBips) < 0 || parseInt(discountBips) > 5000) {
-      alert('Discount must be between 0 and 5000 basis points (0-50%)');
+    const discountValidation = validateBasisPoints(discountBips, 5000);
+    if (!discountValidation.valid) {
+      alert(discountValidation.error || 'Discount must be between 0 and 5000 basis points (0-50%)');
       return;
     }
 
