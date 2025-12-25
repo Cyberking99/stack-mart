@@ -5,9 +5,14 @@ import { ListingCard } from './components/ListingCard';
 import { ListingDetails } from './components/ListingDetails';
 import { ChainhookEvents } from './components/ChainhookEvents';
 import { LoadingSkeleton } from './components/LoadingSkeleton';
+import { BundleManagement } from './components/BundleManagement';
+import { CuratedPack } from './components/CuratedPack';
+import { DisputeResolution } from './components/DisputeResolution';
 import { useStacks } from './hooks/useStacks';
 import { useContract } from './hooks/useContract';
 import './App.css';
+
+type TabType = 'listings' | 'bundles' | 'packs' | 'disputes';
 
 function App() {
   const { isConnected } = useStacks();
@@ -16,6 +21,8 @@ function App() {
   const [selectedListingId, setSelectedListingId] = useState<number | null>(null);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('listings');
+  const [disputeEscrowId, setDisputeEscrowId] = useState<number | null>(null);
 
   const loadListings = async () => {
     setIsLoadingListings(true);
@@ -101,72 +108,161 @@ function App() {
             <strong>Error:</strong> {error}
           </div>
         )}
-        
-        <section>
-          <h2>📝 Create Listing</h2>
-          <CreateListing />
-        </section>
 
-        <section>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h2 style={{ marginBottom: 0 }}>🛍️ Available Listings</h2>
-            <button
-              className="btn btn-secondary"
-              onClick={loadListings}
-              disabled={isLoadingListings}
-            >
+        {/* Tab Navigation */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '10px', 
+          marginBottom: '2rem',
+          borderBottom: '2px solid var(--gray-200)',
+          paddingBottom: '10px'
+        }}>
+          <button
+            className={`btn ${activeTab === 'listings' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('listings')}
+            style={{ borderRadius: '8px 8px 0 0' }}
+          >
+            🛍️ Listings
+          </button>
+          <button
+            className={`btn ${activeTab === 'bundles' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('bundles')}
+            style={{ borderRadius: '8px 8px 0 0' }}
+          >
+            📦 Bundles
+          </button>
+          <button
+            className={`btn ${activeTab === 'packs' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('packs')}
+            style={{ borderRadius: '8px 8px 0 0' }}
+          >
+            🎁 Packs
+          </button>
+          <button
+            className={`btn ${activeTab === 'disputes' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('disputes')}
+            style={{ borderRadius: '8px 8px 0 0' }}
+          >
+            ⚖️ Disputes
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'listings' && (
+          <>
+            <section>
+              <h2>📝 Create Listing</h2>
+              <CreateListing />
+            </section>
+
+            <section>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <h2 style={{ marginBottom: 0 }}>🛍️ Available Listings</h2>
+                <button
+                  className="btn btn-secondary"
+                  onClick={loadListings}
+                  disabled={isLoadingListings}
+                >
+                  {isLoadingListings ? (
+                    <>
+                      <span className="loading"></span>
+                      Loading...
+                    </>
+                  ) : (
+                    '🔄 Refresh'
+                  )}
+                </button>
+              </div>
+              
               {isLoadingListings ? (
-                <>
-                  <span className="loading"></span>
-                  Loading...
-                </>
+                <div className="grid grid-cols-1" style={{ 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                  gap: '1.5rem'
+                }}>
+                  <LoadingSkeleton count={6} />
+                </div>
+              ) : listings.length === 0 ? (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '3rem', 
+                  color: 'var(--gray-500)',
+                  backgroundColor: 'var(--gray-50)',
+                  borderRadius: 'var(--radius-lg)'
+                }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+                  <h3 style={{ marginBottom: '0.5rem', color: 'var(--gray-700)' }}>No listings available</h3>
+                  <p>Be the first to create a listing!</p>
+                </div>
               ) : (
-                '🔄 Refresh'
+                <div className="grid grid-cols-1" style={{ 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                  gap: '1.5rem'
+                }}>
+                  {listings.map((listing) => (
+                    <ListingCard 
+                      key={listing.id} 
+                      listing={listing}
+                      onBuy={(id) => {
+                        if (!isConnected) {
+                          alert('Please connect your wallet to buy');
+                          return;
+                        }
+                        setSelectedListingId(id);
+                      }}
+                      onViewDetails={(id) => setSelectedListingId(id)}
+                    />
+                  ))}
+                </div>
               )}
-            </button>
-          </div>
-          
-          {isLoadingListings ? (
-            <div className="grid grid-cols-1" style={{ 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '1.5rem'
-            }}>
-              <LoadingSkeleton count={6} />
+            </section>
+          </>
+        )}
+
+        {activeTab === 'bundles' && (
+          <section>
+            <BundleManagement />
+          </section>
+        )}
+
+        {activeTab === 'packs' && (
+          <section>
+            <CuratedPack />
+          </section>
+        )}
+
+        {activeTab === 'disputes' && (
+          <section>
+            <h2>⚖️ Dispute Resolution</h2>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label">Escrow ID (for dispute)</label>
+              <input
+                className="form-input"
+                type="number"
+                min="1"
+                value={disputeEscrowId || ''}
+                onChange={(e) => setDisputeEscrowId(e.target.value ? parseInt(e.target.value) : null)}
+                placeholder="Enter escrow ID"
+                style={{ maxWidth: '300px' }}
+              />
+              <div className="form-help">
+                Enter the listing ID that has an escrow you want to dispute or view disputes for
+              </div>
             </div>
-          ) : listings.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '3rem', 
-              color: 'var(--gray-500)',
-              backgroundColor: 'var(--gray-50)',
-              borderRadius: 'var(--radius-lg)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
-              <h3 style={{ marginBottom: '0.5rem', color: 'var(--gray-700)' }}>No listings available</h3>
-              <p>Be the first to create a listing!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1" style={{ 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '1.5rem'
-            }}>
-              {listings.map((listing) => (
-                <ListingCard 
-                  key={listing.id} 
-                  listing={listing}
-                  onBuy={(id) => {
-                    if (!isConnected) {
-                      alert('Please connect your wallet to buy');
-                      return;
-                    }
-                    setSelectedListingId(id);
-                  }}
-                  onViewDetails={(id) => setSelectedListingId(id)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+            {disputeEscrowId && (
+              <DisputeResolution 
+                listingId={disputeEscrowId}
+                escrowId={disputeEscrowId}
+              />
+            )}
+            {!disputeEscrowId && (
+              <div className="card">
+                <div className="card-body">
+                  <p>Enter an escrow ID above to view or create disputes.</p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         <section>
           <ChainhookEvents />
