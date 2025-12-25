@@ -3,6 +3,7 @@ import { useStacks } from '../hooks/useStacks';
 import { useContract } from '../hooks/useContract';
 import { makeContractCall, broadcastTransaction, AnchorMode, PostConditionMode, uintCV, stringAsciiCV, boolCV } from '@stacks/transactions';
 import { CONTRACT_ID } from '../config/contract';
+import { validatePrice, formatSTX } from '../utils/validation';
 
 interface DisputeResolutionProps {
   listingId: number;
