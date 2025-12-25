@@ -91,10 +91,133 @@ export const useContract = () => {
     }
   }, [getListing]);
 
+  const getDispute = useCallback(async (disputeId: number) => {
+    try {
+      let sender = CONTRACT_ID.split('.')[0];
+      try {
+        const userData = userSession.loadUserData();
+        if (userData?.profile?.stxAddress?.mainnet) {
+          sender = userData.profile.stxAddress.mainnet;
+        }
+      } catch (error) {
+        console.warn('User not signed in, using contract address as sender');
+      }
+      const response = await fetch(`${API_URL}/v2/contracts/call-read/${CONTRACT_ID}/get-dispute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender,
+          arguments: [disputeId.toString()],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dispute: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching dispute:', error);
+      throw error;
+    }
+  }, [API_URL, CONTRACT_ID, userSession]);
+
+  const getDisputeStakes = useCallback(async (disputeId: number, staker: string) => {
+    try {
+      const response = await fetch(`${API_URL}/v2/contracts/call-read/${CONTRACT_ID}/get-dispute-stakes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: staker,
+          arguments: [disputeId.toString(), staker],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dispute stakes: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching dispute stakes:', error);
+      throw error;
+    }
+  }, [API_URL, CONTRACT_ID]);
+
+  const getBundle = useCallback(async (bundleId: number) => {
+    try {
+      let sender = CONTRACT_ID.split('.')[0];
+      try {
+        const userData = userSession.loadUserData();
+        if (userData?.profile?.stxAddress?.mainnet) {
+          sender = userData.profile.stxAddress.mainnet;
+        }
+      } catch (error) {
+        console.warn('User not signed in, using contract address as sender');
+      }
+      const response = await fetch(`${API_URL}/v2/contracts/call-read/${CONTRACT_ID}/get-bundle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender,
+          arguments: [bundleId.toString()],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch bundle: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching bundle:', error);
+      throw error;
+    }
+  }, [API_URL, CONTRACT_ID, userSession]);
+
+  const getPack = useCallback(async (packId: number) => {
+    try {
+      let sender = CONTRACT_ID.split('.')[0];
+      try {
+        const userData = userSession.loadUserData();
+        if (userData?.profile?.stxAddress?.mainnet) {
+          sender = userData.profile.stxAddress.mainnet;
+        }
+      } catch (error) {
+        console.warn('User not signed in, using contract address as sender');
+      }
+      const response = await fetch(`${API_URL}/v2/contracts/call-read/${CONTRACT_ID}/get-pack`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender,
+          arguments: [packId.toString()],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch pack: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching pack:', error);
+      throw error;
+    }
+  }, [API_URL, CONTRACT_ID, userSession]);
+
   return {
     getListing,
     getEscrowStatus,
     getAllListings,
+    getDispute,
+    getDisputeStakes,
+    getBundle,
+    getPack,
   };
 };
 
