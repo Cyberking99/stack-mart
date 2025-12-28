@@ -1,11 +1,12 @@
 import { useStacks } from '../hooks/useStacks';
 import { formatAddress } from '../utils/validation';
-import { useAppKitAccount, useAppKit } from '@reown/appkit/react';
+import { useAppKit } from '@reown/appkit/react';
+import { useAccount } from 'wagmi';
 
 export const WalletButton = () => {
   const { isConnected, connectWallet, disconnectWallet, userData, isLoading, appKitAddress, isAppKitConnected } = useStacks();
   const { open } = useAppKit();
-  const { address, isConnected: isAppKitAccountConnected } = useAppKitAccount();
+  const { address, isConnected: isAppKitAccountConnected } = useAccount();
 
   // Determine which wallet is connected
   const connectedAddress = appKitAddress || address || (userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet);

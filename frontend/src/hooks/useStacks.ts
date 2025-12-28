@@ -3,6 +3,7 @@ import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { STACKS_MAINNET, STACKS_TESTNET } from '@stacks/network';
 import { NETWORK } from '../config/contract';
 import { useAppKit } from '@reown/appkit/react';
+import { useAccount } from 'wagmi';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
 const userSession = new UserSession({ appConfig });
@@ -11,7 +12,8 @@ const network = NETWORK === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
 
 export const useStacks = () => {
   // AppKit hooks for modern wallet UI
-  const { open, isConnected: isAppKitConnected, address: appKitAddress } = useAppKit();
+  const { open } = useAppKit();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAccount();
   
   const [userData, setUserData] = useState(() => {
     try {

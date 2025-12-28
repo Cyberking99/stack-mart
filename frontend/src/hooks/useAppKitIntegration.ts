@@ -1,4 +1,5 @@
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
+import { useAppKit } from '@reown/appkit/react';
+import { useAccount } from 'wagmi';
 import { useEffect } from 'react';
 
 /**
@@ -6,8 +7,8 @@ import { useEffect } from 'react';
  * Provides unified interface for wallet connection state
  */
 export const useAppKitIntegration = () => {
-  const { open, close, isOpen } = useAppKit();
-  const { address, isConnected, chain } = useAppKitAccount();
+  const { open, close } = useAppKit();
+  const { address, isConnected, chain } = useAccount();
 
   // Log connection state changes for debugging
   useEffect(() => {
@@ -19,7 +20,6 @@ export const useAppKitIntegration = () => {
   return {
     open,
     close,
-    isOpen,
     address,
     isConnected,
     chain,
