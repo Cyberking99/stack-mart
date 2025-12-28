@@ -38,7 +38,7 @@ export const appKit = createAppKit({
 })
 
 // Export wagmi config for provider
-export const wagmiConfig = appKit.wagmiConfig
+export const wagmiConfig = wagmiAdapter.wagmiConfig
 
 export default appKit
 
