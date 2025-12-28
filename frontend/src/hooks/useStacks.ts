@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { STACKS_MAINNET, STACKS_TESTNET } from '@stacks/network';
 import { NETWORK } from '../config/contract';
+import { useAppKit } from '@reown/appkit/react';
 
 const appConfig = new AppConfig(['store_write', 'publish_data']);
 const userSession = new UserSession({ appConfig });
@@ -9,6 +10,9 @@ const userSession = new UserSession({ appConfig });
 const network = NETWORK === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
 
 export const useStacks = () => {
+  // AppKit hooks for modern wallet UI
+  const { open, isConnected: isAppKitConnected, address: appKitAddress } = useAppKit();
+  
   const [userData, setUserData] = useState(() => {
     try {
       return userSession.isUserSignedIn() ? userSession.loadUserData() : undefined;
@@ -36,6 +40,14 @@ export const useStacks = () => {
   const connectWallet = async () => {
     setIsLoading(true);
     try {
+      // Use AppKit for modern wallet connection UI
+      // This opens the AppKit modal for EVM wallets
+      // For Stacks, we still use showConnect below
+      if (open) {
+        open();
+      }
+      
+      // Also show Stacks Connect for Stacks-specific wallets
       showConnect({
         appDetails: {
           name: 'StackMart',
@@ -71,14 +83,19 @@ export const useStacks = () => {
     setUserData(undefined);
   };
 
+  // Check if either Stacks or AppKit wallet is connected
+  const isConnected = userSession.isUserSignedIn() || isAppKitConnected;
+
   return {
     userData,
-    isConnected: userSession.isUserSignedIn(),
+    isConnected,
     isLoading,
     connectWallet,
     disconnectWallet,
     network,
     userSession,
+    // AppKit specific exports
+    appKitAddress,
+    isAppKitConnected,
   };
 };
-
