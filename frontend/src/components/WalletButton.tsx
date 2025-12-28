@@ -1,13 +1,18 @@
 import { useStacks } from '../hooks/useStacks';
 import { formatAddress } from '../utils/validation';
+import { useAppKitAccount, useAppKit } from '@reown/appkit/react';
 
 export const WalletButton = () => {
-  const { isConnected, connectWallet, disconnectWallet, userData, isLoading } = useStacks();
+  const { isConnected, connectWallet, disconnectWallet, userData, isLoading, appKitAddress, isAppKitConnected } = useStacks();
+  const { open } = useAppKit();
+  const { address, isConnected: isAppKitAccountConnected } = useAppKitAccount();
 
-  if (isConnected && userData?.profile?.stxAddress) {
-    const address = userData.profile.stxAddress.mainnet || userData.profile.stxAddress.testnet;
-    if (!address) return null;
-    const shortAddress = formatAddress(address);
+  // Determine which wallet is connected
+  const connectedAddress = appKitAddress || address || (userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet);
+  const walletConnected = isConnected || isAppKitConnected || isAppKitAccountConnected;
+
+  if (walletConnected && connectedAddress) {
+    const shortAddress = formatAddress(connectedAddress);
 
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -52,7 +57,14 @@ export const WalletButton = () => {
   return (
     <button 
       className="btn btn-primary"
-      onClick={connectWallet} 
+      onClick={() => {
+        // Use AppKit's open function for modern wallet UI
+        if (open) {
+          open();
+        } else {
+          connectWallet();
+        }
+      }} 
       disabled={isLoading}
       style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.3)' }}
     >
@@ -67,4 +79,3 @@ export const WalletButton = () => {
     </button>
   );
 };
-
