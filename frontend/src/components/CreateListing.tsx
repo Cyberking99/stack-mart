@@ -6,6 +6,8 @@ import { TRANSACTION_FEE } from '../config/constants';
 
 import { validatePrice, validateBasisPoints, validateStacksAddress } from '../utils/validation';
 
+import { validatePrice, validateBasisPoints, validateStacksAddress } from '../utils/validation';
+
 export const CreateListing = () => {
   const { userSession, network, isConnected } = useStacks();
   const [price, setPrice] = useState('');
