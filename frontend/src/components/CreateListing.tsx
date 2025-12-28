@@ -3,9 +3,6 @@ import { useStacks } from '../hooks/useStacks';
 import { makeContractCall, broadcastTransaction, AnchorMode, PostConditionMode, uintCV, principalCV } from '@stacks/transactions';
 import { CONTRACT_ID } from '../config/contract';
 import { TRANSACTION_FEE } from '../config/constants';
-
-import { validatePrice, validateBasisPoints, validateStacksAddress } from '../utils/validation';
-
 import { validatePrice, validateBasisPoints, validateStacksAddress } from '../utils/validation';
 
 export const CreateListing = () => {
