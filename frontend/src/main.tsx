@@ -1,10 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiProvider } from 'wagmi'
 import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { appKit } from './config/appkit'
+import { wagmiConfig } from './config/appkit'
 
 // Create React Query client for AppKit
 const queryClient = new QueryClient()
@@ -12,11 +13,11 @@ const queryClient = new QueryClient()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <appKit.Provider>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
           <App />
-        </appKit.Provider>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
     </ErrorBoundary>
   </StrictMode>,
 )
