@@ -3,6 +3,10 @@ import { useStacks } from '../hooks/useStacks';
 import { useContract } from '../hooks/useContract';
 import { ListingCard } from './ListingCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
+import { WalletBalanceDisplay } from './WalletBalanceDisplay';
+import { NetworkSwitcher } from './NetworkSwitcher';
+import { TransactionHistory } from './TransactionHistory';
+import { useAllWallets } from '../hooks/useAllWallets';
 
 export const Dashboard = () => {
     const { userSession } = useStacks();
@@ -65,8 +69,18 @@ export const Dashboard = () => {
         );
     }
 
+    const { isAnyConnected } = useAllWallets();
+
     return (
         <div className="dashboard">
+            {/* Wallet Integration Section */}
+            {isAnyConnected && (
+                <div style={{ marginBottom: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    <WalletBalanceDisplay />
+                    <NetworkSwitcher />
+                </div>
+            )}
+
             {/* Reputation Overview */}
             <div className="grid grid-cols-2" style={{ marginBottom: '2rem' }}>
                 <div className="card">
@@ -143,13 +157,19 @@ export const Dashboard = () => {
                 )}
             </section>
 
-            {/* Transaction History */}
+            {/* Transaction History - Multi-Chain */}
             <section>
                 <h2>Recent Activity</h2>
+                {isAnyConnected && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <TransactionHistory />
+                    </div>
+                )}
                 {isLoading ? (
                     <LoadingSkeleton count={1} />
                 ) : history.length > 0 ? (
                     <div className="card">
+                        <h3 style={{ marginBottom: '1rem' }}>Stacks Contract Transactions</h3>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid var(--gray-200)', textAlign: 'left' }}>
