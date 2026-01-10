@@ -101,9 +101,30 @@ export const BitcoinWalletSelector = ({
   const currentUserData = localUserData || userData;
   const currentIsConnected = isConnected() || isConnectedProp;
 
+  // Extract address from userData - support both old and new API formats
+  const getAddress = () => {
+    if (!currentUserData) return null;
+    
+    // Try new API format first (addresses.stx[0].address)
+    if (currentUserData.addresses?.stx?.[0]?.address) {
+      return currentUserData.addresses.stx[0].address;
+    }
+    
+    // Try old API format (profile.stxAddress)
+    if (currentUserData.profile?.stxAddress?.mainnet) {
+      return currentUserData.profile.stxAddress.mainnet;
+    }
+    
+    if (currentUserData.profile?.stxAddress?.testnet) {
+      return currentUserData.profile.stxAddress.testnet;
+    }
+    
+    return null;
+  };
+
   // If connected, show connected state
   if (currentIsConnected && currentUserData) {
-    const address = currentUserData?.profile?.stxAddress?.mainnet || currentUserData?.profile?.stxAddress?.testnet;
+    const address = getAddress();
     const shortAddress = address ? formatAddress(address) : 'Connected';
 
     return (
@@ -122,7 +143,7 @@ export const BitcoinWalletSelector = ({
             width: '8px', 
             height: '8px', 
             borderRadius: '50%', 
-            backgroundColor: 'var(--success)',
+            backgroundColor: '#22c55e',
             display: 'inline-block'
           }}></span>
           {shortAddress}
