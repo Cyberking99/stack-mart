@@ -31,13 +31,13 @@ export const useStacks = () => {
   });
 
   useEffect(() => {
-    const checkUserSession = () => {
+    const checkConnection = () => {
       try {
-        const isSignedIn = userSession.isUserSignedIn();
-        setIsStacksConnected(isSignedIn);
+        const connected = isConnected();
+        setIsStacksConnected(connected);
         
-        if (isSignedIn) {
-          const data = userSession.loadUserData();
+        if (connected) {
+          const data = getLocalStorage();
           if (data) {
             setUserData(data);
             setIsLoading(false);
@@ -55,16 +55,16 @@ export const useStacks = () => {
     };
 
     // Check immediately
-    checkUserSession();
+    checkConnection();
 
     // Poll for changes (in case wallet connects externally)
-    const interval = setInterval(checkUserSession, 500); // More frequent polling
+    const interval = setInterval(checkConnection, 500);
     
     // Also listen for storage events (when wallet connects in another tab)
     const handleStorageChange = (e: StorageEvent) => {
       // Only react to relevant storage changes
       if (e.key && e.key.includes('stacks')) {
-        checkUserSession();
+        checkConnection();
       }
     };
     
@@ -72,7 +72,7 @@ export const useStacks = () => {
     
     // Also listen for focus events (user might have connected in another tab)
     const handleFocus = () => {
-      checkUserSession();
+      checkConnection();
     };
     
     window.addEventListener('focus', handleFocus);
