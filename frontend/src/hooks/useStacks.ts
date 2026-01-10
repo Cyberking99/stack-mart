@@ -14,7 +14,8 @@ export const useStacks = () => {
   
   const [userData, setUserData] = useState(() => {
     try {
-      return userSession.isUserSignedIn() ? userSession.loadUserData() : undefined;
+      const data = getLocalStorage();
+      return data || undefined;
     } catch (error) {
       console.warn('Error loading user data:', error);
       return undefined;
@@ -23,7 +24,7 @@ export const useStacks = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isStacksConnected, setIsStacksConnected] = useState(() => {
     try {
-      return userSession.isUserSignedIn();
+      return isConnected();
     } catch (error) {
       return false;
     }
