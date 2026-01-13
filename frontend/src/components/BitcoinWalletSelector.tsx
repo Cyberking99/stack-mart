@@ -72,8 +72,16 @@ export const BitcoinWalletSelector = ({
       const response = await connect();
       console.log('Connected:', response.addresses);
       
-      // Update local state
-      const data = getLocalStorage();
+      // Update local state - use response data if available, otherwise get from localStorage
+      let data = getLocalStorage();
+      
+      // If response has addresses, merge them into the data structure
+      if (response.addresses && data) {
+        data = { ...data, addresses: response.addresses };
+      } else if (response.addresses && !data) {
+        data = { addresses: response.addresses };
+      }
+      
       if (data) {
         setLocalUserData(data);
       }
@@ -108,6 +116,17 @@ export const BitcoinWalletSelector = ({
     // Try new API format first (addresses.stx[0].address)
     if (currentUserData.addresses?.stx?.[0]?.address) {
       return currentUserData.addresses.stx[0].address;
+    }
+    
+    // Try alternative new API format (addresses.stx as string array)
+    if (Array.isArray(currentUserData.addresses?.stx) && currentUserData.addresses.stx.length > 0) {
+      const firstAddress = currentUserData.addresses.stx[0];
+      if (typeof firstAddress === 'string') {
+        return firstAddress;
+      }
+      if (firstAddress?.address) {
+        return firstAddress.address;
+      }
     }
     
     // Try old API format (profile.stxAddress)
