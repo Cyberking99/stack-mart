@@ -72,16 +72,9 @@ export const BitcoinWalletSelector = ({
       const response = await connect();
       console.log('Connected:', response.addresses);
       
-      // Update local state - use response data if available, otherwise get from localStorage
-      let data = getLocalStorage();
-      
-      // If response has addresses, merge them into the data structure
-      if (response.addresses && data) {
-        data = { ...data, addresses: response.addresses };
-      } else if (response.addresses && !data) {
-        data = { addresses: response.addresses };
-      }
-      
+      // Update local state
+      // The response.addresses is already stored in localStorage by the connect() function
+      const data = getLocalStorage();
       if (data) {
         setLocalUserData(data);
       }
