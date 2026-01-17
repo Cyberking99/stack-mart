@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { WalletButton } from './components/WalletButton';
+import { LandingPage } from './components/LandingPage';
 import { CreateListing } from './components/CreateListing';
 import { ListingCard } from './components/ListingCard';
 import { ListingDetails } from './components/ListingDetails';
@@ -18,6 +19,11 @@ type TabType = 'listings' | 'bundles' | 'packs' | 'disputes' | 'dashboard';
 function App() {
   const { isConnected } = useStacks();
   const { getAllListings } = useContract();
+  const [showLanding, setShowLanding] = useState(() => {
+    // Check if user has visited before (stored in localStorage)
+    const hasVisited = localStorage.getItem('stackmart_has_visited');
+    return !hasVisited;
+  });
   const [listings, setListings] = useState<any[]>([]);
   const [selectedListingId, setSelectedListingId] = useState<number | null>(null);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
@@ -32,6 +38,18 @@ function App() {
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const enterMarketplace = () => {
+    localStorage.setItem('stackmart_has_visited', 'true');
+    setShowLanding(false);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Show landing page if user hasn't visited
+  if (showLanding) {
+    return <LandingPage onEnter={enterMarketplace} />;
+  }
 
   const loadListings = async () => {
     setIsLoadingListings(true);
