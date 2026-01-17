@@ -39,6 +39,10 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const showLandingPage = () => {
+    setShowLanding(true);
+  };
+
   const enterMarketplace = () => {
     localStorage.setItem('stackmart_has_visited', 'true');
     setShowLanding(false);
@@ -137,19 +141,33 @@ function App() {
   return (
     <div className="App">
       <header>
-        <h1 
-          onClick={goHome}
-          style={{ 
-            cursor: 'pointer',
-            userSelect: 'none',
-            transition: 'opacity 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-          title="Click to go home"
-        >
-          🏠 StackMart Marketplace
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <h1 
+            onClick={goHome}
+            style={{ 
+              cursor: 'pointer',
+              userSelect: 'none',
+              transition: 'opacity 0.2s',
+              margin: 0
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            title="Click to go home"
+          >
+            🏠 StackMart Marketplace
+          </h1>
+          <button
+            onClick={showLandingPage}
+            className="btn btn-outline btn-sm"
+            style={{ 
+              fontSize: '0.85rem',
+              padding: '0.4rem 0.8rem'
+            }}
+            title="View landing page"
+          >
+            ℹ️ About
+          </button>
+        </div>
         <WalletButton />
       </header>
 
