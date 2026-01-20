@@ -300,9 +300,14 @@
             (nft-contract-opt (get nft-contract listing))
             (token-id-opt (get token-id listing))
             (royalty (/ (* price royalty-bips) BPS_DENOMINATOR))
-            (seller-share (- price royalty))
+            (marketplace-fee (/ (* price MARKETPLACE_FEE_BIPS) BPS_DENOMINATOR))
+            (seller-share (- (- price royalty) marketplace-fee))
            )
         (begin
+          ;; Transfer marketplace fee
+          (try! (stx-transfer? marketplace-fee tx-sender FEE_RECIPIENT))
+          
+          ;; Transfer royalty if applicable
           ;; Transfer NFT if present (SIP-009 transfer function)
           ;; Note: Seller must authorize this contract to transfer on their behalf
           (match nft-contract-opt
