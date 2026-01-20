@@ -59,3 +59,15 @@
   (let ((sender-balance (default-to u0 (map-get? balances sender))))
     (asserts! (>= sender-balance amount) ERR-INSUFFICIENT-BALANCE)
     (ok sender-balance)))
+;; Update balances atomically for transfer
+(define-private (update-balances (amount uint) (sender principal) (recipient principal) (sender-balance uint))
+  (let ((new-sender-balance (- sender-balance amount))
+        (recipient-balance (default-to u0 (map-get? balances recipient)))
+        (new-recipient-balance (+ recipient-balance amount)))
+    ;; Update sender balance
+    (if (is-eq new-sender-balance u0)
+      (map-delete balances sender)
+      (map-set balances sender new-sender-balance))
+    ;; Update recipient balance
+    (map-set balances recipient new-recipient-balance)
+    (ok true)))
