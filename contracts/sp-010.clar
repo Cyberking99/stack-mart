@@ -27,3 +27,6 @@
 ;; Get token name
 (define-read-only (get-name)
   (ok CONTRACT-NAME))
+;; Get token symbol
+(define-read-only (get-symbol)
+  (ok CONTRACT-SYMBOL))
