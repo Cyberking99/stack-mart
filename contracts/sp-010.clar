@@ -9,3 +9,7 @@
 
 ;; Initial supply (1 million tokens with 6 decimals)
 (define-constant INITIAL-SUPPLY u1000000000000)
+
+;; Data storage
+;; Map to track token balances for each principal
+(define-map balances principal uint)
