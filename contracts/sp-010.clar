@@ -71,3 +71,18 @@
     ;; Update recipient balance
     (map-set balances recipient new-recipient-balance)
     (ok true)))
+;; Main Transfer Function
+
+;; Transfer tokens from sender to recipient
+(define-public (transfer (amount uint) (sender principal) (recipient principal) (memo (optional (buff 34))))
+  (begin
+    ;; Validate caller is the sender
+    (asserts! (is-eq tx-sender sender) ERR-UNAUTHORIZED)
+    ;; Validate transfer parameters
+    (try! (validate-transfer amount sender recipient))
+    ;; Check sufficient balance
+    (let ((sender-balance (try! (check-balance amount sender))))
+      ;; Update balances
+      (try! (update-balances amount sender recipient sender-balance))
+      ;; Return success
+      (ok true))))
