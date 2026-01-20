@@ -142,6 +142,11 @@
   , weight: uint
   })
 
+;; Wishlist system
+(define-map wishlists
+  { user: principal }
+  { listing-ids: (list 100 uint) })
+
 ;; Bundle and curated pack system
 (define-map bundles
   { id: uint }
