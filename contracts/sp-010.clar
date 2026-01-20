@@ -30,3 +30,6 @@
 ;; Get token symbol
 (define-read-only (get-symbol)
   (ok CONTRACT-SYMBOL))
+;; Get token decimals
+(define-read-only (get-decimals)
+  (ok CONTRACT-DECIMALS))
