@@ -147,6 +147,11 @@
   { user: principal }
   { listing-ids: (list 100 uint) })
 
+;; Price history tracking
+(define-map price-history
+  { listing-id: uint }
+  { history: (list 10 { price: uint, block-height: uint }) })
+
 ;; Bundle and curated pack system
 (define-map bundles
   { id: uint }
