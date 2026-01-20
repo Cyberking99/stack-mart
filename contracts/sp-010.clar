@@ -22,3 +22,8 @@
 (define-constant ERR-UNAUTHORIZED (err u3))
 (define-constant ERR-INVALID-AMOUNT (err u4))
 (define-constant ERR-SELF-TRANSFER (err u5))
+;; SIP-010 Metadata Functions
+
+;; Get token name
+(define-read-only (get-name)
+  (ok CONTRACT-NAME))
