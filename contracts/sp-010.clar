@@ -127,3 +127,15 @@
 ;; Initialize contract with initial token supply to deployer
 (begin
   (try! (mint INITIAL-SUPPLY tx-sender)))
+;; Safe Arithmetic Functions
+
+;; Safe addition with overflow protection
+(define-private (safe-add (a uint) (b uint))
+  (let ((result (+ a b)))
+    (asserts! (>= result a) (err u999)) ;; Overflow check
+    (ok result)))
+
+;; Safe subtraction with underflow protection  
+(define-private (safe-sub (a uint) (b uint))
+  (asserts! (>= a b) (err u998)) ;; Underflow check
+  (ok (- a b)))
