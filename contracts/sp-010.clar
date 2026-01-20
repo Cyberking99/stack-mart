@@ -84,6 +84,8 @@
     (let ((sender-balance (try! (check-balance amount sender))))
       ;; Update balances
       (try! (update-balances amount sender recipient sender-balance))
+      ;; Emit transfer event
+      (emit-transfer-event amount sender recipient)
       ;; Return success
       (ok true))))
 ;; Event Emission Functions
