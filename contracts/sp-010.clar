@@ -36,3 +36,8 @@
 ;; Get token URI for metadata
 (define-read-only (get-token-uri)
   (ok (some CONTRACT-URI)))
+;; Balance and Supply Query Functions
+
+;; Get balance for a principal (returns 0 if never held tokens)
+(define-read-only (get-balance (who principal))
+  (ok (default-to u0 (map-get? balances who))))
