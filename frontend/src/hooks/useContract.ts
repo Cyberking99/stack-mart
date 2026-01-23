@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { CONTRACT_ID, API_URL } from '../config/contract';
+import { CONTRACT_ID, API_URL, NETWORK } from '../config/contract';
 import { useStacks } from './useStacks';
 import { getStacksAddress } from '../utils/validation';
 import { uintCV, AnchorMode, PostConditionMode, makeContractCall } from '@stacks/transactions';
