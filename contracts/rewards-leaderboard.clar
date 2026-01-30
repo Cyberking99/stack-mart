@@ -471,3 +471,98 @@
 (define-read-only (get-tier-upgrade-event (user principal) (tier uint))
     (map-get? TierUpgradeEvents { user: user, tier: tier })
 )
+
+;; ============================================================================
+;; ACHIEVEMENT SYSTEM
+;; ============================================================================
+
+;; Achievement IDs
+(define-constant ACHIEVEMENT-FIRST-ACTIVITY u1)
+(define-constant ACHIEVEMENT-STREAK-WEEK u2)
+(define-constant ACHIEVEMENT-STREAK-MONTH u3)
+(define-constant ACHIEVEMENT-REFERRAL-CHAMPION u4)
+(define-constant ACHIEVEMENT-LIBRARY-MASTER u5)
+(define-constant ACHIEVEMENT-GITHUB-CONTRIBUTOR u6)
+(define-constant ACHIEVEMENT-TIER-GOLD u7)
+(define-constant ACHIEVEMENT-TIER-PLATINUM u8)
+(define-constant ACHIEVEMENT-TIER-DIAMOND u9)
+(define-constant ACHIEVEMENT-POINTS-10K u10)
+
+;; Achievement Rewards
+(define-constant ACHIEVEMENT-REWARD-SMALL u50)
+(define-constant ACHIEVEMENT-REWARD-MEDIUM u100)
+(define-constant ACHIEVEMENT-REWARD-LARGE u250)
+
+;; Achievement Tracking
+(define-map UserAchievements 
+    { user: principal, achievement-id: uint }
+    { unlocked-at-block: uint, reward-claimed: bool }
+)
+
+;; Read-only: Check if Achievement is Unlocked
+(define-read-only (has-achievement (user principal) (achievement-id uint))
+    (is-some (map-get? UserAchievements { user: user, achievement-id: achievement-id }))
+)
+
+;; Read-only: Get Achievement Details
+(define-read-only (get-achievement (user principal) (achievement-id uint))
+    (map-get? UserAchievements { user: user, achievement-id: achievement-id })
+)
+
+;; Private: Unlock Achievement
+(define-private (unlock-achievement (user principal) (achievement-id uint) (reward uint))
+    (if (has-achievement user achievement-id)
+        false ;; Already unlocked
+        (begin
+            (map-set UserAchievements 
+                { user: user, achievement-id: achievement-id }
+                { unlocked-at-block: burn-block-height, reward-claimed: false }
+            )
+            (print { event: "achievement-unlocked", user: user, achievement-id: achievement-id, reward: reward })
+            true
+        )
+    )
+)
+
+;; Private: Check and Unlock Achievements
+(define-private (check-achievements (user principal))
+    (let (
+        (stats (unwrap! (get-user-stats user) false))
+        (streak (get current-streak (get-user-streak user)))
+        (tier (unwrap-panic (get-user-tier user)))
+    )
+        ;; First Activity
+        (if (and (> (get total-points stats) u0) (not (has-achievement user ACHIEVEMENT-FIRST-ACTIVITY)))
+            (unlock-achievement user ACHIEVEMENT-FIRST-ACTIVITY ACHIEVEMENT-REWARD-SMALL)
+            false
+        )
+        ;; Streak Achievements
+        (if (and (>= streak u7) (not (has-achievement user ACHIEVEMENT-STREAK-WEEK)))
+            (unlock-achievement user ACHIEVEMENT-STREAK-WEEK ACHIEVEMENT-REWARD-MEDIUM)
+            false
+        )
+        (if (and (>= streak u30) (not (has-achievement user ACHIEVEMENT-STREAK-MONTH)))
+            (unlock-achievement user ACHIEVEMENT-STREAK-MONTH ACHIEVEMENT-REWARD-LARGE)
+            false
+        )
+        ;; Tier Achievements
+        (if (and (>= tier TIER-GOLD) (not (has-achievement user ACHIEVEMENT-TIER-GOLD)))
+            (unlock-achievement user ACHIEVEMENT-TIER-GOLD ACHIEVEMENT-REWARD-MEDIUM)
+            false
+        )
+        (if (and (>= tier TIER-PLATINUM) (not (has-achievement user ACHIEVEMENT-TIER-PLATINUM)))
+            (unlock-achievement user ACHIEVEMENT-TIER-PLATINUM ACHIEVEMENT-REWARD-LARGE)
+            false
+        )
+        (if (and (>= tier TIER-DIAMOND) (not (has-achievement user ACHIEVEMENT-TIER-DIAMOND)))
+            (unlock-achievement user ACHIEVEMENT-TIER-DIAMOND ACHIEVEMENT-REWARD-LARGE)
+            false
+        )
+        ;; Points Milestone
+        (if (and (>= (get total-points stats) u10000) (not (has-achievement user ACHIEVEMENT-POINTS-10K)))
+            (unlock-achievement user ACHIEVEMENT-POINTS-10K ACHIEVEMENT-REWARD-LARGE)
+            false
+        )
+        true
+    )
+)
