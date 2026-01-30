@@ -690,3 +690,69 @@
 (define-read-only (get-claim-history (user principal) (claim-id uint))
     (map-get? ClaimHistory { user: user, claim-id: claim-id })
 )
+
+;; ============================================================================
+;; BONUS POINT EVENTS
+;; ============================================================================
+
+;; Active Events Tracking
+(define-map ActiveEvents
+    uint ;; event-id
+    {
+        name: (string-ascii 50),
+        multiplier: uint,
+        start-block: uint,
+        end-block: uint,
+        active: bool
+    }
+)
+(define-data-var next-event-id uint u1)
+
+;; Admin: Create Bonus Event
+(define-public (create-bonus-event 
+    (name (string-ascii 50))
+    (multiplier uint)
+    (duration-blocks uint))
+    (begin
+        (asserts! (is-eq tx-sender ADMIN) ERR-NOT-AUTHORIZED)
+        (asserts! (> multiplier u100) ERR-INVALID-POINTS) ;; Must be > 1.0x
+        (asserts! (> duration-blocks u0) ERR-INVALID-POINTS)
+        
+        (let ((event-id (var-get next-event-id)))
+            (map-set ActiveEvents event-id
+                {
+                    name: name,
+                    multiplier: multiplier,
+                    start-block: burn-block-height,
+                    end-block: (+ burn-block-height duration-blocks),
+                    active: true
+                }
+            )
+            (var-set next-event-id (+ event-id u1))
+            (print { event: "bonus-event-created", event-id: event-id, name: name, multiplier: multiplier })
+            (ok event-id)
+        )
+    )
+)
+
+;; Admin: End Bonus Event
+(define-public (end-bonus-event (event-id uint))
+    (begin
+        (asserts! (is-eq tx-sender ADMIN) ERR-NOT-AUTHORIZED)
+        (let ((event-data (unwrap! (map-get? ActiveEvents event-id) ERR-INVALID-POINTS)))
+            (map-set ActiveEvents event-id (merge event-data { active: false }))
+            (print { event: "bonus-event-ended", event-id: event-id })
+            (ok true)
+        )
+    )
+)
+
+;; Read-only: Get Active Events
+(define-read-only (get-active-events)
+    (ok (var-get next-event-id))
+)
+
+;; Read-only: Get Event Details
+(define-read-only (get-event (event-id uint))
+    (map-get? ActiveEvents event-id)
+)
